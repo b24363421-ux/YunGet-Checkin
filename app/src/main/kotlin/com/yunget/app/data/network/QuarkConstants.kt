@@ -86,6 +86,12 @@ object QuarkConstants {
     /** 会话刷新探测接口：任意接口均可，用于重新下发 __puus（AList util.go:224 用 /config） */
     const val CONFIG_URL = "$API_BASE/1/clouddrive/config?pr=ucpro&fr=pc"
 
+    /** 夸克每日签到（领取永久空间成长值） */
+    const val GROWTH_SIGN_URL = "https://drive-m.quark.cn/1/clouddrive/capacity/growth/sign?pr=ucpro&fr=pc&uc_param_str="
+
+    /** 查询签到/成长值状态 */
+    const val GROWTH_INFO_URL = "https://drive-m.quark.cn/1/clouddrive/capacity/growth/info?pr=ucpro&fr=pc&uc_param_str="
+
     /** __puus 有效期约 3 小时，提前到 90 分钟刷新（对齐 AList 100±5 分钟） */
     const val PUUS_REFRESH_INTERVAL_MS = 90L * 60 * 1000
 
