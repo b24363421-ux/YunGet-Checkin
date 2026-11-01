@@ -187,6 +187,7 @@ fun DriveScreen(
     quarkAllAccounts: List<com.yunget.app.ui.items.MultiAccountRow> = emptyList(),
     onQuarkSelectPrimary: ((String) -> Unit)? = null,
     onQuarkDeleteAccount: ((String) -> Unit)? = null,
+    onQuarkCheckIn: (() -> Unit)? = null,
     /** 打开「账号管理」页（全平台多账号）。 */
     onManageAccounts: (() -> Unit)? = null,
     /** 夸克云盘下载入队后切换到「下载」Tab */
