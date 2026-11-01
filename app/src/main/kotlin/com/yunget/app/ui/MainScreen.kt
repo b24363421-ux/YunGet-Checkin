@@ -914,6 +914,22 @@ fun MainScreen(
                         },
                         onQuarkSelectPrimary = { viewModel.setPrimary(it) },
                         onQuarkDeleteAccount = { viewModel.removeAccount(it) },
+                        onQuarkCheckIn = {
+                            val cookie = quarkAccount?.cookie
+                            if (!cookie.isNullOrBlank()) {
+                                scope.launch {
+                                    runCatching { api.signDaily(cookie) }
+                                        .onSuccess {
+                                            SnackbarController.show("夸克签到请求已完成")
+                                        }
+                                        .onFailure {
+                                            SnackbarController.show(it.message ?: "夸克签到失败")
+                                        }
+                                }
+                            } else {
+                                SnackbarController.show("请先登录夸克账号")
+                            }
+                        },
                         onManageAccounts = { showAccountManager = true },
                         onDownloadStarted = { currentTab = MainTab.Download },
                         onUCLogin = { showUCLogin = true },
