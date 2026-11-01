@@ -21,6 +21,14 @@ jobs:
           java-version: '17'
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+      - name: Install TurboDL Maven artifacts
+        run: |
+          mkdir -p "$HOME/.m2/repository"
+          curl --fail --location --retry 3 \
+            "https://github.com/jiayuxuan123/TurboDL/releases/download/v0.3.1.0/TurboDL-v0.3.1.0-mavenLocal.zip" \
+            --output /tmp/turbodl-mavenLocal.zip
+          unzip -q /tmp/turbodl-mavenLocal.zip -d "$HOME/.m2/repository"
+          test -d "$HOME/.m2/repository/dev/turbodl"
       - name: Build debug APK
         run: bash ./gradlew :app:assembleDebug --stacktrace
       - name: Upload APK
