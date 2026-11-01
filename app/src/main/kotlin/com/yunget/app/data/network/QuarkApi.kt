@@ -101,6 +101,53 @@ class QuarkApi(
         }.getOrNull()
     }
 
+    /**
+     * 每日签到：领取夸克网盘成长值/永久空间奖励。
+     * Cookie 直接使用本地已登录账号，不经过第三方服务。
+     *
+     * @return 官方接口的 data 对象；已签到时也保留官方返回内容供 UI 判读。
+     */
+    suspend fun signDaily(cookie: String): JSONObject = withContext(Dispatchers.IO) {
+        val body = JSONObject().put("sign_cyclic", true).toString()
+        val request = postJson(QuarkConstants.GROWTH_SIGN_URL, cookie, body)
+        client.newCall(request).execute().use { response ->
+            mergeCookieFromResponse(request, response)
+            val raw = response.body?.string().orEmpty()
+            val json = runCatching { JSONObject(raw) }
+                .getOrElse { throw QuarkApiException("签到响应无法解析（HTTP ${response.code}）") }
+            val status = json.optInt("status", -1)
+            val code = json.optInt("code", -1)
+            val success = json.optBoolean("success", false)
+            if (!response.isSuccessful || (status != 200 && code != 0 && !success)) {
+                val message = json.optString("message")
+                    .ifBlank { json.optString("msg") }
+                    .ifBlank { "夸克签到失败（HTTP ${response.code}）" }
+                throw QuarkApiException(message, code)
+            }
+            json.optJSONObject("data") ?: json
+        }
+    }
+
+    /** 查询每日签到与成长值状态，供账号页展示签到结果/奖励信息。 */
+    suspend fun getGrowthInfo(cookie: String): JSONObject = withContext(Dispatchers.IO) {
+        val request = get(QuarkConstants.GROWTH_INFO_URL, cookie)
+        client.newCall(request).execute().use { response ->
+            mergeCookieFromResponse(request, response)
+            val raw = response.body?.string().orEmpty()
+            val json = runCatching { JSONObject(raw) }
+                .getOrElse { throw QuarkApiException("成长值状态无法解析（HTTP ${response.code}）") }
+            val status = json.optInt("status", -1)
+            val code = json.optInt("code", -1)
+            if (!response.isSuccessful || (status != 200 && code != 0 && !json.optBoolean("success", false))) {
+                throw QuarkApiException(
+                    json.optString("message").ifBlank { "读取夸克签到状态失败" },
+                    code
+                )
+            }
+            json.optJSONObject("data") ?: json
+        }
+    }
+
     // ---------- 分享解析 ----------
 
     /** 4.1 获取分享 Token（请求体携带 pwd_id/passcode） */
