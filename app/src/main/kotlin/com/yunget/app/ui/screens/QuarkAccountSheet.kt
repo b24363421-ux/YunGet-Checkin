@@ -290,6 +290,17 @@ fun QuarkAccountSheet(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // 每日签到：复用当前已登录账号，不要求用户手动复制 Cookie。
+            if (onCheckIn != null) {
+                OutlinedButton(
+                    onClick = onCheckIn,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                ) {
+                    Text("夸克每日签到")
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+            }
+
             // 修改备注：放在退出登录**之前**，因为它不是破坏性操作。
             // 用户打开账号弹窗的动机常常是"给这个号起个名字"，
             // 而退出是低频且危险的动作，不该排在前面。
