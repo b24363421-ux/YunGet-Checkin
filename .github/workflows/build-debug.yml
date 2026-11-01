@@ -31,14 +31,8 @@ jobs:
             --output /tmp/turbodl-mavenLocal.zip
           unzip -l /tmp/turbodl-mavenLocal.zip | head -40
           unzip -q /tmp/turbodl-mavenLocal.zip -d /tmp/turbodl-maven
-          MAVEN_ROOT="$(find /tmp/turbodl-maven -type d -path '*/dev/turbodl' -print -quit)"
-          if [ -z "$MAVEN_ROOT" ]; then
-            echo "TurboDL Maven archive does not contain dev/turbodl"
-            find /tmp/turbodl-maven -maxdepth 5 -type f | head -80
-            exit 1
-          fi
-          mkdir -p "$HOME/.m2/repository/dev"
-          cp -a "$MAVEN_ROOT" "$HOME/.m2/repository/dev/"
+          mkdir -p "$HOME/.m2/repository/dev/turbodl"
+          cp -a /tmp/turbodl-maven/. "$HOME/.m2/repository/dev/turbodl/"
           test -f "$HOME/.m2/repository/dev/turbodl/turbodl-core/0.3.1.0/turbodl-core-0.3.1.0.pom"
           find "$HOME/.m2/repository/dev/turbodl" -maxdepth 3 -type f | head -40
       - name: Build debug APK
