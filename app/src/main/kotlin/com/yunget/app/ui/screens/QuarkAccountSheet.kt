@@ -97,6 +97,7 @@ fun QuarkAccountSheet(
     onSelectPrimary: ((String) -> Unit)? = null,
     /** 删除某个非主账号。 */
     onDeleteAccount: ((String) -> Unit)? = null,
+    onCheckIn: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     var showFullCookie by rememberSaveable { mutableStateOf(false) }
