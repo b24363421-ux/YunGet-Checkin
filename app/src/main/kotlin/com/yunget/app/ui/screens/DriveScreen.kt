@@ -601,6 +601,7 @@ fun DriveScreen(
             allAccounts = quarkAllAccounts,
             onSelectPrimary = onQuarkSelectPrimary,
             onDeleteAccount = onQuarkDeleteAccount,
+            onCheckIn = onQuarkCheckIn,
         )
     }
 
