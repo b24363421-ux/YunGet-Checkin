@@ -7,6 +7,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import java.io.BufferedReader
 
 class MainActivity : Activity() {
     private lateinit var web: WebView
@@ -28,7 +29,8 @@ class MainActivity : Activity() {
             }
         }
         setContentView(web)
-        web.loadUrl("file:///android_asset/index.html")
+        val html = assets.open("index.html").bufferedReader().use(BufferedReader::readText)
+        web.loadDataWithBaseURL("https://www.pansousuo.com/", html, "text/html", "UTF-8", null)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
