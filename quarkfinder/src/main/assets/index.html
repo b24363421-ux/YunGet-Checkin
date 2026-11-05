@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>QuarkFinder</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#151d31;--line:#2a3854;--text:#eef3ff;--muted:#9eacc7;--blue:#70a7ff;--green:#75d6ad}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#1a2b4b,var(--bg) 55%);color:var(--text);font:16px system-ui,"Noto Sans TC",sans-serif}
+main{max-width:980px;margin:auto;padding:24px 18px 60px}header{display:flex;align-items:center;gap:12px;margin-bottom:20px}.logo{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#5c9cff,#8b7bff);display:grid;place-items:center;font-weight:900;font-size:20px}h1{font-size:24px;margin:0}header p{margin:3px 0;color:var(--muted);font-size:13px}
+.panel,.result,.batch{background:rgba(21,29,49,.94);border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0}
+.searchrow{display:flex;gap:10px}input,select,textarea,button{font:inherit;border-radius:10px;border:1px solid var(--line);padding:12px;background:#0e172a;color:var(--text);min-width:0}input{flex:1}button{background:#316fd1;border:0;font-weight:700;cursor:pointer}button.secondary{background:#263650}button:focus,input:focus,select:focus,textarea:focus{outline:3px solid #77aaff;outline-offset:2px}
+.filters{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.hint,.meta{color:var(--muted);font-size:13px}.status{margin:12px 2px;color:var(--muted);min-height:24px}.result h3{font-size:17px;margin:0 0 8px;line-height:1.45}.meta{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}.url{font-size:12px;color:#9ec4ff;word-break:break-all}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.actions button{padding:9px 12px;font-size:13px}.tag{border:1px solid #3d5275;border-radius:20px;padding:3px 8px;font-size:12px;color:#c8d8f4}.pager{display:flex;justify-content:center;gap:10px;margin:18px}.batch textarea{width:100%;min-height:100px;resize:vertical}.batch h2,.panel h2{font-size:16px;margin:0 0 12px}.empty{text-align:center;padding:32px;color:var(--muted)}
+@media(max-width:650px){.filters{grid-template-columns:repeat(2,1fr)}main{padding:16px 12px}.searchrow{flex-wrap:wrap}.searchrow input{flex-basis:100%}}
+</style></head>
+<body><main>
+<header><div class="logo">Q</div><div><h1>QuarkFinder</h1><p>夸克網盤資源搜尋 · 公開索引</p></div></header>
+<section class="panel">
+<div class="searchrow"><input id="q" placeholder="輸入片名、動畫、書籍或關鍵字" autocomplete="off"><button id="search">搜尋資源</button></div>
+<div class="filters">
+<select id="cat"><option value="">全部類型</option><option value="movie">電影</option><option value="tv">電視劇</option><option value="anime">動漫</option><option value="book">書籍</option><option value="software">軟體</option><option value="course">課程</option><option value="music">音樂</option></select>
+<select id="quality"><option value="">全部畫質</option><option value="4k">4K</option><option value="1080p">1080P</option><option value="720p">720P</option></select>
+<select id="sort"><option value="hot">熱門優先</option><option value="latest">最新收錄</option><option value="size">容量排序</option><option value="year">年份排序</option></select>
+<select id="since"><option value="">不限收錄時間</option><option value="30d">近 30 天</option><option value="365d">近一年</option></select>
+</div><p class="hint">資料來源：盤搜索公開 API。搜尋結果是分享索引，不代表檔案仍可播放或下載。</p>
+</section>
+<section class="batch"><h2>批次整理分享連結</h2><textarea id="batchText" placeholder="每行貼上一個夸克分享連結，可附提取碼"></textarea><div class="actions"><button id="parseBatch" class="secondary">整理連結</button><button id="clearBatch" class="secondary">清空</button></div><div id="batchOut"></div></section>
+<div id="status" class="status">輸入關鍵字開始搜尋。</div><section id="results"></section>
+<div class="pager"><button id="prev" class="secondary">上一頁</button><span id="pageLabel" class="hint" style="align-self:center">第 1 頁</span><button id="next" class="secondary">下一頁</button></div>
+<p class="hint">連結狀態驗證：跨網域限制下不會以 HTTP 狀態碼猜測有效性。請開啟分享頁實際確認；無法載入、提取碼錯誤或分享已取消時，請以夸克頁面提示為準。</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);let page=1,totalPages=1,lastItems=[];
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function extractCode(s){const m=String(s||"").match(/(?:提取码|提取碼|密码|密碼|提取碼[:： ]*|pwd[:= ]*)([A-Za-z0-9]{4})/i);return m?m[1]:"";}
+async function search(){const q=$("q").value.trim();if(!q){$("status").textContent="請先輸入搜尋關鍵字。";return;}page=Math.max(1,page);$("status").textContent="搜尋中…";$("results").innerHTML="";
+const p=new URLSearchParams({q,pan:"quark",sort:$("sort").value,p:String(page)});for(const k of ["cat","quality","since"])if($(k).value)p.set(k,$(k).value);
+try{const r=await fetch("https://www.pansousuo.com/api/search?"+p.toString(),{headers:{Accept:"application/json"}});if(!r.ok)throw new Error("API 回應 "+r.status);const j=await r.json();lastItems=j.items||[];totalPages=Number(j.totalPages||1);$("pageLabel").textContent="第 "+page+" 頁 / "+totalPages+" 頁 · 共 "+(j.total||0)+" 筆";$("status").textContent=j.blocked?"此關鍵字未返回結果。":("找到 "+(j.total||lastItems.length)+" 筆夸克資源");
+if(!lastItems.length){$("results").innerHTML='<div class="empty">沒有找到結果，請嘗試其他關鍵字。</div>';return;}
+$("results").innerHTML=lastItems.map((x,i)=>{const url=x.share_url||x.url||"";const code=x.access_code||x.code||"";return '<article class="result"><h3>'+esc(x.title||"未命名資源")+'</h3><div class="meta"><span class="tag">夸克網盤</span><span>'+esc(x.category||"")+'</span><span>'+esc(x.size_text||"")+'</span><span>'+esc(x.year||"")+'</span></div><div class="url">'+esc(url)+'</div><div class="meta">提取碼：'+(code?esc(code):"無/未提供")+' · 收錄資訊以來源資料為準</div><div class="actions"><button onclick="openShare('+i+')">開啟分享頁</button><button class="secondary" onclick="copyText('+i+',\'url\')">複製連結</button><button class="secondary" onclick="copyText('+i+',\'code\')">複製提取碼</button><button class="secondary" onclick="copyText('+i+',\'both\')">複製連結+提取碼</button><button class="secondary" onclick="markCheck('+i+')">標記已人工確認</button></div><div class="hint" id="check'+i+'">尚未人工確認有效性</div></article>';}).join("");
+}catch(e){$("status").textContent="搜尋失敗："+e.message+"。請稍後重試。";}}
+function openShare(i){const u=lastItems[i]?.share_url||lastItems[i]?.url;if(u)window.open(u,"_blank");}
+async function copyText(i,kind){const x=lastItems[i]||{},u=x.share_url||x.url||"",c=x.access_code||x.code||"";const t=kind==="url"?u:kind==="code"?c:(u+(c?" 提取碼："+c:""));try{await navigator.clipboard.writeText(t);$("status").textContent="已複製。";}catch(e){$("status").textContent="複製失敗，請手動選取連結。";}}
+function markCheck(i){const el=$("check"+i);if(el)el.textContent="已由使用者標記人工確認（請以實際分享頁狀態為準）";}
+$("search").onclick=()=>{page=1;search();};$("q").addEventListener("keydown",e=>{if(e.key==="Enter"){page=1;search();}});$("prev").onclick=()=>{if(page>1){page--;search();}};$("next").onclick=()=>{if(page<totalPages){page++;search();}};
+$("parseBatch").onclick=()=>{const lines=$("batchText").value.split(/\n+/).map(s=>s.trim()).filter(Boolean);const out=lines.map((line,i)=>{const u=(line.match(/https?:\/\/[^\s]+/i)||[])[0]||"";const c=extractCode(line);return {u:u.replace(/[，,。；;]+$/,""),c};}).filter(x=>x.u);$("batchOut").innerHTML=out.length?out.map((x,i)=>'<div class="result"><div class="url">'+esc(x.u)+'</div><div class="meta">提取碼：'+esc(x.c||"未辨識")+'</div><div class="actions"><button onclick="window.open('+JSON.stringify(x.u)+',\'_blank\')">開啟</button><button class="secondary" onclick="navigator.clipboard.writeText('+JSON.stringify(x.u)+')">複製</button></div></div>').join(""):'<p class="hint">沒有辨識到夸克分享網址。</p>';};
+$("clearBatch").onclick=()=>{$("batchText").value="";$("batchOut").innerHTML="";};
+</script></body></html>
